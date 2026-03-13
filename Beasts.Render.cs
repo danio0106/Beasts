@@ -67,7 +67,8 @@ public partial class Beasts
             ImGuiWindowFlags.NoBringToFrontOnFocus |
             ImGuiWindowFlags.NoBackground);
 
-        _backGroundWindowPtr = ImGui.GetWindowDrawList();
+        // Use foreground draw list so price labels stay above other plugin map icons.
+        _backGroundWindowPtr = ImGui.GetForegroundDrawList();
 
         var map = ingameUi.Map;
         var largeMap = map.LargeMap.AsObject<SubMap>();
