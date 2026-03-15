@@ -17,12 +17,7 @@ public partial class Beasts : BaseSettingsPlugin<BeastsSettings>
     private readonly Dictionary<long, Entity> _trackedBeasts = new();
     private readonly Dictionary<long, Entity> _trackedYellowBeasts = new();
 
-    private static readonly HashSet<string> CaptureBuffNames = new(StringComparer.Ordinal)
-    {
-        "capture_monster_trapped",
-        "capture_monster_captured",
-        "capture_monster_disappearing"
-    };
+    private const string TrappedBuffName = "capture_monster_trapped";
 
     private static readonly HashSet<string> KnownBeastPaths = new(
         BeastsDatabase.AllBeasts.Select(b => b.Path).Where(p => !string.IsNullOrEmpty(p)),
@@ -58,7 +53,7 @@ public partial class Beasts : BaseSettingsPlugin<BeastsSettings>
             var entity = trackedBeast.Value;
             if (entity == null || !entity.IsValid) continue;
 
-            if (IsCapturedOrDead(entity))
+            if (IsTrapped(entity))
             {
                 beastsToRemove.Add(trackedBeast.Key);
             }
@@ -80,7 +75,7 @@ public partial class Beasts : BaseSettingsPlugin<BeastsSettings>
                 continue;
             }
 
-            if (IsCapturedOrDead(entity))
+            if (IsTrapped(entity))
             {
                 yellowToRemove.Add(trackedYellow.Key);
             }
@@ -127,11 +122,10 @@ public partial class Beasts : BaseSettingsPlugin<BeastsSettings>
         return GetAllowedBeastsInRange(range).Any();
     }
 
-    private static bool IsCapturedOrDead(Entity entity)
+    private static bool IsTrapped(Entity entity)
     {
-        if (!entity.IsAlive) return true;
         var buffs = entity.GetComponent<Buffs>();
-        return buffs != null && buffs.BuffsList.Any(buff => CaptureBuffNames.Contains(buff.Name));
+        return buffs != null && buffs.BuffsList.Any(buff => buff.Name == TrappedBuffName);
     }
 
     private IEnumerable<Entity> GetAllowedBeastsInRange(int range)
