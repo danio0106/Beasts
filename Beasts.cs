@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using Beasts.Api;
 using Beasts.Data;
 using ExileCore;
@@ -9,6 +10,8 @@ using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.Shared;
 using ExileCore.Shared.Enums;
+using ExileCore.Shared.Helpers;
+using static ExileCore.Shared.Nodes.HotkeyNodeV2;
 
 namespace Beasts;
 
@@ -32,6 +35,7 @@ public partial class Beasts : BaseSettingsPlugin<BeastsSettings>
     };
 
     private bool _hasLoggedMagicInputMissing;
+    private bool _hasLoggedHotkeyFallbackMissing;
 
     public override void OnLoad()
     {
@@ -94,20 +98,32 @@ public partial class Beasts : BaseSettingsPlugin<BeastsSettings>
         if (target == null) return false;
 
         var castWithTarget = GameController.PluginBridge.GetMethod<Action<Entity, uint>>("MagicInput.CastSkillWithTarget");
-        if (castWithTarget == null)
+        if (castWithTarget != null)
         {
-            if (!_hasLoggedMagicInputMissing)
-            {
-                _hasLoggedMagicInputMissing = true;
-                DebugWindow.LogError("[Beasts] MagicInput.CastSkillWithTarget bridge is unavailable.", 10);
-            }
-
-            return false;
+            castWithTarget(target, skillId);
+            _hasLoggedMagicInputMissing = false;
+            _hasLoggedHotkeyFallbackMissing = false;
+            return true;
         }
 
-        castWithTarget(target, skillId);
-        _hasLoggedMagicInputMissing = false;
-        return true;
+        if (!_hasLoggedMagicInputMissing)
+        {
+            _hasLoggedMagicInputMissing = true;
+            DebugWindow.LogMsg("[Beasts] MagicInput bridge unavailable. Using hotkey fallback.", 10);
+        }
+
+        var fallbackResult = TryCastUsingSkillHotkey(skillId, target);
+        if (!fallbackResult && !_hasLoggedHotkeyFallbackMissing)
+        {
+            _hasLoggedHotkeyFallbackMissing = true;
+            DebugWindow.LogError("[Beasts] Failed to resolve skill hotkey fallback for allowed beast cast.", 10);
+        }
+        else if (fallbackResult)
+        {
+            _hasLoggedHotkeyFallbackMissing = false;
+        }
+
+        return fallbackResult;
     }
 
     private bool CastNamedSkillOnAllowedBeast(string skillName, int range)
@@ -120,6 +136,42 @@ public partial class Beasts : BaseSettingsPlugin<BeastsSettings>
         if (actorSkill == null || !actorSkill.CanBeUsed) return false;
 
         return CastSkillOnAllowedBeast(actorSkill.Id, range);
+    }
+
+    private bool TryCastUsingSkillHotkey(uint skillId, Entity target)
+    {
+        var actor = GameController.Player?.GetComponent<Actor>();
+        var actorSkill = actor?.ActorSkills?.FirstOrDefault(skill => skill.Id == skillId);
+        if (actorSkill == null || !actorSkill.CanBeUsed) return false;
+
+        var hotkey = ResolveSkillHotkey(actorSkill);
+        if (hotkey == null) return false;
+
+        var targetScreenPos = GameController.IngameState.Camera.WorldToScreen(target.PosNum);
+        Input.SetCursorPos(targetScreenPos);
+        InputHelper.SendInputPress(new HotkeyNodeValue(hotkey.Value));
+        return true;
+    }
+
+    private Keys? ResolveSkillHotkey(ActorSkill actorSkill)
+    {
+        var shortcuts = GameController.IngameState?.ShortcutSettings?.Shortcuts?.ToList();
+        if (shortcuts == null || shortcuts.Count == 0) return null;
+
+        var directIndex = actorSkill.SkillSlotIndex;
+        if (directIndex >= 0 && directIndex < shortcuts.Count)
+        {
+            var key = (Keys)shortcuts[directIndex].MainKey;
+            if (key != Keys.None) return key;
+        }
+
+        if (directIndex > 0 && directIndex - 1 < shortcuts.Count)
+        {
+            var key = (Keys)shortcuts[directIndex - 1].MainKey;
+            if (key != Keys.None) return key;
+        }
+
+        return null;
     }
 
     private IEnumerable<Entity> GetAllowedBeastsInRange(int range)
