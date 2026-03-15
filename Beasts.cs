@@ -18,21 +18,18 @@ namespace Beasts;
 public partial class Beasts : BaseSettingsPlugin<BeastsSettings>
 {
     private readonly Dictionary<long, Entity> _trackedBeasts = new();
-    private static readonly HashSet<string> RedBestiaryPaths = new(StringComparer.Ordinal)
-    {
-        "Metadata/Monsters/LeagueBestiary/GemFrogBestiary",
-        "Metadata/Monsters/LeagueBestiary/WolfBestiary",
-        "Metadata/Monsters/LeagueBestiary/LynxBestiary",
-        "Metadata/Monsters/LeagueBestiary/HellionBestiary2",
-        "Metadata/Monsters/LeagueBestiary/TigerBestiary",
-        "Metadata/Monsters/LeagueBestiary/SpiderPlatedBestiary",
-        "Metadata/Monsters/LeagueBestiary/Avians/MarakethBirdBestiary",
-        "Metadata/Monsters/LeagueBestiary/CrabSpiderBestiary",
-        "Metadata/Monsters/LeagueBestiary/TigerBestiarySpiritBoss",
-        "Metadata/Monsters/LeagueBestiary/SpiderPlatedBestiarySpiritBoss",
-        "Metadata/Monsters/LeagueBestiary/MarakethBirdSpiritBoss",
-        "Metadata/Monsters/LeagueBestiary/NessaCrabBestiarySpiritBoss"
-    };
+
+    private static readonly HashSet<string> KnownBeastPaths = new(
+        BeastsDatabase.AllBeasts.Select(b => b.Path).Where(p => !string.IsNullOrEmpty(p)),
+        StringComparer.Ordinal
+    );
+
+    private static readonly string[] BeastMetadataPrefixes =
+    [
+        "Metadata/Monsters/LeagueBestiary/",
+        "Metadata/Monsters/LeagueHarvest/",
+        "Metadata/Monsters/LeagueAzmeri/"
+    ];
 
     private bool _hasLoggedMagicInputMissing;
     private bool _hasLoggedHotkeyFallbackMissing;
@@ -177,10 +174,9 @@ public partial class Beasts : BaseSettingsPlugin<BeastsSettings>
     private IEnumerable<Entity> GetAllowedBeastsInRange(int range)
     {
         var maxRange = Math.Max(1, range);
-        var selectedRedPaths = Settings.Beasts
+        var selectedPaths = Settings.Beasts
             .Select(beast => beast.Path)
             .Where(path => !string.IsNullOrEmpty(path))
-            .Where(path => RedBestiaryPaths.Contains(path))
             .ToHashSet(StringComparer.Ordinal);
 
         foreach (var entity in GameController.EntityListWrapper.ValidEntitiesByType[EntityType.Monster])
@@ -189,16 +185,28 @@ public partial class Beasts : BaseSettingsPlugin<BeastsSettings>
 
             var metadata = entity.Metadata;
             if (string.IsNullOrEmpty(metadata)) continue;
-            if (!metadata.StartsWith("Metadata/Monsters/LeagueBestiary/", StringComparison.Ordinal)) continue;
 
-            var isRedBeast = RedBestiaryPaths.Contains(metadata);
-            if (!isRedBeast)
+            var isBeast = false;
+            foreach (var prefix in BeastMetadataPrefixes)
             {
+                if (metadata.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    isBeast = true;
+                    break;
+                }
+            }
+            if (!isBeast) continue;
+
+            var isKnownBeast = KnownBeastPaths.Contains(metadata);
+            if (!isKnownBeast)
+            {
+                // Yellow beast (not in database) — always allow
                 yield return entity;
                 continue;
             }
 
-            if (selectedRedPaths.Contains(metadata))
+            // Known/named beast — only allow if selected in GUI
+            if (selectedPaths.Contains(metadata))
             {
                 yield return entity;
             }
