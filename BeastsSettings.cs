@@ -136,7 +136,6 @@ public class BeastsSettings : ISettings
 
     public ToggleNode AutoRefreshPrices { get; set; } = new ToggleNode(true);
 
-    [Menu(null, "Minutes between automatic poe.ninja refreshes")]
     public RangeNode<int> PriceRefreshMinutes { get; set; } = new(15, 1, 60);
 
     public ButtonNode FetchBeastPrices { get; set; } = new ButtonNode();
