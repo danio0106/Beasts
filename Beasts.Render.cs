@@ -121,22 +121,25 @@ public partial class Beasts
         }
 
         // Draw yellow beasts on map
-        foreach (var trackedYellow in _trackedYellowBeasts)
+        if (Settings.ShowYellowBeasts.Value)
         {
-            var entity = trackedYellow.Value;
-            var positioned = entity.GetComponent<Positioned>();
-            if (positioned == null) continue;
+            foreach (var trackedYellow in _trackedYellowBeasts)
+            {
+                var entity = trackedYellow.Value;
+                var positioned = entity.GetComponent<Positioned>();
+                if (positioned == null) continue;
 
-            var mapPos = EntityToMapPos(positioned, playerPosition, playerHeight, heightData, mapCenter);
+                var mapPos = EntityToMapPos(positioned, playerPosition, playerHeight, heightData, mapCenter);
 
-            var renderName = entity.GetComponent<Render>()?.Name ?? "Yellow Beast";
-            var text = renderName;
-            var textSize = Graphics.MeasureText(text);
-            var textOffset = textSize / 2f;
+                var renderName = entity.GetComponent<Render>()?.Name ?? "Yellow Beast";
+                var text = renderName;
+                var textSize = Graphics.MeasureText(text);
+                var textOffset = textSize / 2f;
 
-            var bgPadding = new Vector2(4, 2);
-            DrawBox(mapPos - textOffset - bgPadding, mapPos + textOffset + bgPadding, new Color(0, 0, 0, 180));
-            DrawText(text, mapPos - textOffset, new Color(255, 250, 0));
+                var bgPadding = new Vector2(4, 2);
+                DrawBox(mapPos - textOffset - bgPadding, mapPos + textOffset + bgPadding, new Color(0, 0, 0, 180));
+                DrawText(text, mapPos - textOffset, new Color(255, 250, 0));
+            }
         }
     }
 
@@ -196,18 +199,21 @@ public partial class Beasts
         }
 
         // Draw yellow beasts in world
-        foreach (var trackedYellow in _trackedYellowBeasts)
+        if (Settings.ShowYellowBeasts.Value)
         {
-            var entity = trackedYellow.Value;
-            var positioned = entity.GetComponent<Positioned>();
-            if (positioned == null) continue;
+            foreach (var trackedYellow in _trackedYellowBeasts)
+            {
+                var entity = trackedYellow.Value;
+                var positioned = entity.GetComponent<Positioned>();
+                if (positioned == null) continue;
 
-            var renderName = entity.GetComponent<Render>()?.Name ?? "Yellow Beast";
-            var pos = GameController.IngameState.Data.ToWorldWithTerrainHeight(positioned.GridPosition);
-            Graphics.DrawText(renderName, GameController.IngameState.Camera.WorldToScreen(pos), new Color(255, 250, 0),
-                FontAlign.Center);
+                var renderName = entity.GetComponent<Render>()?.Name ?? "Yellow Beast";
+                var pos = GameController.IngameState.Data.ToWorldWithTerrainHeight(positioned.GridPosition);
+                Graphics.DrawText(renderName, GameController.IngameState.Camera.WorldToScreen(pos), new Color(255, 250, 0),
+                    FontAlign.Center);
 
-            DrawFilledCircleInWorldPosition(pos, 100, new Color(255, 250, 0));
+                DrawFilledCircleInWorldPosition(pos, 100, new Color(255, 250, 0));
+            }
         }
     }
 
@@ -263,7 +269,7 @@ public partial class Beasts
                 var textPos = center + new Vector2(0, 20);
                 Graphics.DrawText(text, textPos, Color.White, FontAlign.Center);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // ignored
             }
@@ -305,16 +311,19 @@ public partial class Beasts
             }
 
             // Yellow beasts in tracking window
-            foreach (var trackedYellow in _trackedYellowBeasts)
+            if (Settings.ShowYellowBeasts.Value)
             {
-                var entity = trackedYellow.Value;
-                var renderName = entity.GetComponent<Render>()?.Name ?? "Yellow Beast";
+                foreach (var trackedYellow in _trackedYellowBeasts)
+                {
+                    var entity = trackedYellow.Value;
+                    var renderName = entity.GetComponent<Render>()?.Name ?? "Yellow Beast";
 
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.TextColored(new System.Numerics.Vector4(1f, 0.98f, 0f, 1f), "-");
-                ImGui.TableNextColumn();
-                ImGui.TextColored(new System.Numerics.Vector4(1f, 0.98f, 0f, 1f), renderName);
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.TextColored(new System.Numerics.Vector4(1f, 0.98f, 0f, 1f), "-");
+                    ImGui.TableNextColumn();
+                    ImGui.TextColored(new System.Numerics.Vector4(1f, 0.98f, 0f, 1f), renderName);
+                }
             }
 
             ImGui.EndTable();

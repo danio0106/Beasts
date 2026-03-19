@@ -126,6 +126,8 @@ public class BeastsSettings : ISettings
 
     public ToggleNode ShowTrackedBeastsWindow { get; set; } = new ToggleNode(true);
 
+    public ToggleNode ShowYellowBeasts { get; set; } = new ToggleNode(false);
+
     public ToggleNode ShowBeastPricesOnLargeMap { get; set; } = new ToggleNode(true);
     
     public ToggleNode ShowCapturedBeastsInInventory { get; set; } = new ToggleNode(true);
