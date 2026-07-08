@@ -8,7 +8,8 @@ namespace Beasts.Api;
 
 public static class PoeNinja
 {
-    private static readonly string PoeNinjaUrl = "https://poe.ninja/api/data/itemoverview?league=Mirage&type=Beast";
+    //Fixed api link. Will need to update league name to new in a couple weeks.
+    private static readonly string PoeNinjaUrl = "https://poe.ninja/poe1/api/economy/stash/current/item/overview?league=Mirage&type=Beast";
 
     private class PoeNinjaLine
     {
